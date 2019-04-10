@@ -4,41 +4,11 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.routz.fabric_sdk_java</groupId>
-    <artifactId>sdkdemo</artifactId>
+    <groupId>com.routz.fabric_java_sdk_demo</groupId>
+    <artifactId>sdkintegration</artifactId>
     <version>1.0-SNAPSHOT</version>
 
-    <properties>
-        <grpc.version>1.18.0</grpc.version><!-- CURRENT_GRPC_VERSION -->
-        <protobuf.version>3.6.1</protobuf.version>
-        <bouncycastle.version>1.60</bouncycastle.version>
-        <httpclient.version>4.5.6</httpclient.version>
-        <javadoc.version>3.0.1</javadoc.version>
-        <skipITs>true</skipITs>
-        <alpn-boot-version>8.1.7.v20160121</alpn-boot-version>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <jacoco.version>0.8.2</jacoco.version>
-        <log4j.version>1.2.17</log4j.version>
-        <org.hyperledger.fabric.sdktest.ITSuite>IntegrationSuite.java</org.hyperledger.fabric.sdktest.ITSuite>
-        <gpg.executable>gpg2</gpg.executable>
-    </properties>
-
     <dependencies>
-        <!-- https://mvnrepository.com/artifact/org.apache.httpcomponents/httpclient -->
-        <dependency>
-            <groupId>org.apache.httpcomponents</groupId>
-            <artifactId>httpclient</artifactId>
-            <version>${httpclient.version}</version>
-        </dependency>
-
-        <!-- https://mvnrepository.com/artifact/org.apache.httpcomponents/httpmime -->
-        <dependency>
-            <groupId>org.apache.httpcomponents</groupId>
-            <artifactId>httpmime</artifactId>
-            <version>${httpclient.version}</version>
-            <scope>test</scope>
-        </dependency>
-
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
@@ -53,4 +23,5 @@
             <version>1.4.0</version>
         </dependency>
     </dependencies>
+
 </project>

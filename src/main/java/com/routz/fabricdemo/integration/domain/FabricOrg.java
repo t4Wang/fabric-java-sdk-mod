@@ -100,7 +100,6 @@ public class FabricOrg {
 
     }
 
-
     public Set<String> getPeerNames() {
 
         return Collections.unmodifiableSet(peerLocations.keySet());
@@ -138,6 +137,13 @@ public class FabricOrg {
         return Collections.unmodifiableCollection(ordererLocations.values());
     }
 
+    public Map<String, String> getOrderNameAndLocations() {
+        return Collections.unmodifiableMap(ordererLocations);
+    }
+
+    public Map<String, String> getPeerNameAndLocations() {
+        return Collections.unmodifiableMap(peerLocations);
+    }
 
     public void setCAProperties(Properties caProperties) {
         this.caProperties = caProperties;

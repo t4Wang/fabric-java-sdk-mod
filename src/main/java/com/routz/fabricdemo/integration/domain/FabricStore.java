@@ -56,19 +56,9 @@ public class FabricStore {
     private Log logger = LogFactory.getLog(FabricStore.class);
     private CryptoSuite cryptoSuite;
 
-    private FabricStore(File file) {
+    public FabricStore(File file) {
         this.file = file.getAbsolutePath();
     }
-
-    static public FabricStore setupFabricStore() {
-        File fabricStoreFile = new File(System.getProperty("java.io.tmpdir") + "/HFCSampletest.properties");
-
-        if (fabricStoreFile.exists()) { //For testing start fresh
-            fabricStoreFile.delete();
-        }
-        return new FabricStore(fabricStoreFile);
-    }
-
 
     /**
      * Get the value associated with name.

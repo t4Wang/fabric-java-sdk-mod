@@ -220,10 +220,9 @@ public class ConfigManager {
 
                         fabricOrg.setCAProperties(properties);
                     }
-
                     String caName = fabricOrg.getCAName(); //Try one of each name and no name.
                     if (caName != null && !caName.isEmpty()) {
-                        fabricOrg.setCAClient(HFCAClient.createNewInstance(caName, fabricOrg.getCALocation(), fabricOrg.getCAProperties()));
+                        fabricOrg.setCAClient(HFCAClient.createNewInstance(fabricOrg.getCAName(), fabricOrg.getCALocation(), fabricOrg.getCAProperties()));
                     } else {
                         fabricOrg.setCAClient(HFCAClient.createNewInstance(fabricOrg.getCALocation(), fabricOrg.getCAProperties()));
                     }
