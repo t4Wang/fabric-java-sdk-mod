@@ -22,7 +22,7 @@ public class FabricTest {
     @Test
     public void erollUser() throws Exception {
         // 登记用户
-        FabricUserService.enroll("user1", "dSUqAwvQbjrY", "Org1MSP", "peerOrg1", "ca0", "http://192.168.1.66:7054", null);
+        FabricUserService.enroll("user1", "baHIGPaLGBNo", "Org1MSP", "peerOrg1", "ca0", "http://192.168.1.66:7054", null);
     }
     @Test
     public void createChannel() throws Exception {
@@ -37,7 +37,7 @@ public class FabricTest {
     @Test
     public void sendTransaction() throws Exception {
         String[] initArgs = {"a", "500", "b", "" + 200};
-        String[] chaincodeFunctionArgs = {"a", "b", "105"};
-        FabricChannelService.sendTransaction(initArgs, "move", chaincodeFunctionArgs, "user1", "dSUqAwvQbjrY", "foo", "peerOrg1");
+        String[] chaincodeFunctionArgs = {"a", "b", "100"};
+        FabricChannelService.sendTransaction(initArgs, "move", chaincodeFunctionArgs, "user1", "baHIGPaLGBNo", "foo", "peerOrg1");
     }
 }
