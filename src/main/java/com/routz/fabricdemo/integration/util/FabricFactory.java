@@ -3,6 +3,7 @@ package com.routz.fabricdemo.integration.util;
 import com.routz.fabricdemo.integration.domain.FabricOrg;
 import com.routz.fabricdemo.integration.domain.FabricStore;
 import com.routz.fabricdemo.integration.domain.FabricUser;
+import org.hyperledger.fabric.protos.peer.Query;
 import org.hyperledger.fabric.sdk.Channel;
 import org.hyperledger.fabric.sdk.ChannelConfiguration;
 import org.hyperledger.fabric.sdk.HFClient;
@@ -26,6 +27,7 @@ import java.security.spec.InvalidKeySpecException;
 import java.util.Collection;
 import java.util.EnumSet;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -179,5 +181,43 @@ public class FabricFactory {
                     createPeerOptions()
                             .setPeerRoles(EnumSet.of(Peer.PeerRole.ENDORSING_PEER, Peer.PeerRole.LEDGER_QUERY, Peer.PeerRole.CHAINCODE_QUERY, Peer.PeerRole.EVENT_SOURCE)));
         }
+    }
+
+    private static boolean checkInstalledChaincode(HFClient client, Peer peer, String ccName, String ccPath, String ccVersion) throws InvalidArgumentException, ProposalException {
+        List<Query.ChaincodeInfo> ccinfoList = client.queryInstalledChaincodes(peer);
+        boolean found = false;
+
+        for (Query.ChaincodeInfo ccifo : ccinfoList) {
+            if (ccPath != null) {
+                found = ccName.equals(ccifo.getName()) && ccPath.equals(ccifo.getPath()) && ccVersion.equals(ccifo.getVersion());
+                if (found) {
+                    break;
+                }
+            }
+            found = ccName.equals(ccifo.getName()) && ccVersion.equals(ccifo.getVersion());
+            if (found) {
+                break;
+            }
+        }
+        return found;
+    }
+
+    public static boolean checkInstantiatedChaincode(Channel channel, Peer peer, String ccName, String ccPath, String ccVersion) throws InvalidArgumentException, ProposalException {
+        List<Query.ChaincodeInfo> ccinfoList = channel.queryInstantiatedChaincodes(peer);
+        boolean found = false;
+
+        for (Query.ChaincodeInfo ccifo : ccinfoList) {
+            if (ccPath != null) {
+                found = ccName.equals(ccifo.getName()) && ccPath.equals(ccifo.getPath()) && ccVersion.equals(ccifo.getVersion());
+                if (found) {
+                    break;
+                }
+            }
+            found = ccName.equals(ccifo.getName()) && ccVersion.equals(ccifo.getVersion());
+            if (found) {
+                break;
+            }
+        }
+        return found;
     }
 }
