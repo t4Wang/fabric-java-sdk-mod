@@ -269,7 +269,7 @@ public class FabricChannelService {
                         }
                     }
                     throw new AssertionError(format("Test failed with %s exception %s", e.getClass().getName(), e.getMessage()), e);
-                }).get(config.getTransactionWaitTime(), TimeUnit.SECONDS);
+                }).get(config.getTransactionWaitTime(), TimeUnit.SECONDS);  // 设置获取回调结果
             }
 
             // We can only send channel queries to peers that are in the same org as the SDK user context
@@ -665,6 +665,7 @@ public class FabricChannelService {
             } else {
                 expectedMoveRCMap.put(channelName, 200L); // not really supported for Java or Node.
             }
+            // 要获取事件回调，必须传入 EXPECTED_EVENT_NAME
             tm2.put(EXPECTED_EVENT_NAME, EXPECTED_EVENT_DATA);  //This should trigger an event see chaincode why.
 
             transactionProposalRequest.setTransientMap(tm2);
