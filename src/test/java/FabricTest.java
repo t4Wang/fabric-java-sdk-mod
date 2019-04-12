@@ -12,32 +12,41 @@ public class FabricTest {
 
     static private final ConfigManager config = FabricFactory.getConfig();
 
+    static final private String CHANNEL_NAME = "bar";
+    static final private String ORG_NAME = "peerOrg1";
+    static final private String TEST_USER_NAME = "user1";
+    static final private String TEST_USER_SECRET = "iRyPuGKQwHax";
+
     @Test
     public void registerUser() throws Exception {
         // 注册用户
-        FabricUser user = FabricUserService.register("user1", "org1.department1", "peerOrg1");
+        FabricUser user = FabricUserService.register(TEST_USER_NAME, "org1.department1", ORG_NAME);
         System.out.println(user.getEnrollmentSecret());
-        // dSUqAwvQbjrY
     }
     @Test
     public void erollUser() throws Exception {
         // 登记用户
-        FabricUserService.enroll("user1", "baHIGPaLGBNo", "Org1MSP", "peerOrg1", "ca0", "http://192.168.1.66:7054", null);
+        FabricUserService.enroll(TEST_USER_NAME, TEST_USER_SECRET, "Org1MSP", ORG_NAME, "ca0", "http://192.168.1.66:7054", null);
     }
     @Test
     public void createChannel() throws Exception {
-        String channelConfigurationPath = "src/test/fixture/sdkintegration/e2e-2Orgs/" + config.getFabricConfigGenVers() + "/foo.tx";
-        FabricChannelService.constructChannel("foo", channelConfigurationPath, "peerOrg1");
+        String channelConfigurationPath = "src/test/fixture/sdkintegration/e2e-2Orgs/" + config.getFabricConfigGenVers() + "/" + CHANNEL_NAME + ".tx";
+        FabricChannelService.constructChannel(CHANNEL_NAME, channelConfigurationPath, ORG_NAME);
     }
     @Test
     public void installChaincode() throws Exception {
-        FabricChannelService.installChaincode("peerOrg1", "foo");
+        FabricChannelService.installChaincode(ORG_NAME, CHANNEL_NAME);
     }
-
     @Test
-    public void sendTransaction() throws Exception {
+    public void invoke() throws Exception {
         String[] initArgs = {"a", "500", "b", "" + 200};
-        String[] chaincodeFunctionArgs = {"a", "b", "100"};
-        FabricChannelService.sendTransaction(initArgs, "move", chaincodeFunctionArgs, "user1", "baHIGPaLGBNo", "foo", "peerOrg1");
+        String[] chaincodeFunctionArgs = {"a", "b", "5"};
+        FabricChannelService.invoke(initArgs, "move", chaincodeFunctionArgs, TEST_USER_NAME, TEST_USER_SECRET, CHANNEL_NAME, ORG_NAME);
+    }
+    @Test
+    public void query() {
+        String fcnName = "query";
+        String[] chaincodeFunctionArgs = {"b"};
+        FabricChannelService.queryTransaction(fcnName, chaincodeFunctionArgs, TEST_USER_NAME, TEST_USER_SECRET, CHANNEL_NAME, ORG_NAME);
     }
 }
