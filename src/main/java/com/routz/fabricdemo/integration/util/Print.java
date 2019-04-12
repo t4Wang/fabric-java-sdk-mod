@@ -16,7 +16,7 @@ public class Print {
     }
 
     public static void assertEquals(Object o1, Object o2) {
-        assertEquals(o1 + " not equals" + o2, o1, o2);
+        assertEquals(o1 + " not equals " + o2, o1, o2);
     }
 
     public static void assertEquals(String msg, Object o1, Object o2) {
