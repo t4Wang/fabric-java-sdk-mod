@@ -575,39 +575,39 @@ public class FabricChannelService {
 
                 //  System.exit(10);
 
-                ProposalResponse resp = null;
-                if (!successful.isEmpty()) {
-                    resp = successful.iterator().next();
-                    byte[] x = resp.getChaincodeActionResponsePayload(); // This is the data returned by the chaincode.
-                    String resultAsString = null;
-                    if (x != null) {
-                        resultAsString = new String(x, UTF_8);
-                    }
-                    assertEquals(":)", resultAsString);
-                    assertEquals(expectedMoveRCMap.get(channelName).intValue(), resp.getChaincodeActionResponseStatus()); //Chaincode's status.
-
-                    TxReadWriteSetInfo readWriteSetInfo = resp.getChaincodeActionResponseReadWriteSetInfo();
-                    //See blockwalker below how to transverse this
-                    assertNotNull(readWriteSetInfo);
-                    assertTrue(readWriteSetInfo.getNsRwsetCount() > 0);
-
-                    ChaincodeID cid = resp.getChaincodeID();
-                    assertNotNull(cid);
-                    final String path = cid.getPath();
-                    if (null == chaincodePath) {
-                        assertTrue(path == null || "".equals(path));
-                    } else {
-                        assertEquals(chaincodePath, path);
-                    }
-
-                    assertEquals(chaincodeName, cid.getName());
-                    assertEquals(chaincodeVersion, cid.getVersion());
-
-                    ////////////////////////////
-                    // Send Transaction Transaction to orderer
-                    // 发送交易给orderer
-                    out("Sending chaincode transaction to orderer.");
-                }
+//                ProposalResponse resp = null;
+//                if (!successful.isEmpty()) {
+//                    resp = successful.iterator().next();
+//                    byte[] x = resp.getChaincodeActionResponsePayload(); // This is the data returned by the chaincode.
+//                    String resultAsString = null;
+//                    if (x != null) {
+//                        resultAsString = new String(x, UTF_8);
+//                    }
+//                    assertEquals(":)", resultAsString);
+//                    assertEquals(expectedMoveRCMap.get(channelName).intValue(), resp.getChaincodeActionResponseStatus()); //Chaincode's status.
+//
+//                    TxReadWriteSetInfo readWriteSetInfo = resp.getChaincodeActionResponseReadWriteSetInfo();
+//                    //See blockwalker below how to transverse this
+//                    assertNotNull(readWriteSetInfo);
+//                    assertTrue(readWriteSetInfo.getNsRwsetCount() > 0);
+//
+//                    ChaincodeID cid = resp.getChaincodeID();
+//                    assertNotNull(cid);
+//                    final String path = cid.getPath();
+//                    if (null == chaincodePath) {
+//                        assertTrue(path == null || "".equals(path));
+//                    } else {
+//                        assertEquals(chaincodePath, path);
+//                    }
+//
+//                    assertEquals(chaincodeName, cid.getName());
+//                    assertEquals(chaincodeVersion, cid.getVersion());
+//
+//                    ////////////////////////////
+//                    // Send Transaction Transaction to orderer
+//                    // 发送交易给orderer
+//                    out("Sending chaincode transaction to orderer.");
+//                }
                 return channel.sendTransaction(successful).get(config.getTransactionWaitTime(), TimeUnit.SECONDS);
             } catch(Exception e) {
                 out("Caught an exception while invoking chaincode");
