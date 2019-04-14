@@ -3,6 +3,9 @@
 > 这个版本根据官方[hyperledger/fabric-sdk-java](https://github.com/hyperledger/fabric-sdk-java)项目的
 /src/test/java/sdkintegration/org.hyperledger.fabric.sdkintegration.End2endIT类修改而来。
 
+## 项目源码地址：
+[github](https://github.com/t4Wang/fabric-java-sdk-mod)
+
 ## 功能划分
 用户：
 register user
