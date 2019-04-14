@@ -46,5 +46,25 @@ configtxgen --configPath . -outputCreateChannelTx 通道名.tx -profile TwoOrgsC
 
 这样就在目录下生成`通道名.tx`文件了
 
+## 组织节点配置
+
+在`com.routz.fabricdemo.integration.utilConfigManager`里将组织节点都配置好了，因为我这的业务是基本一上线就不会改动了，所以在这写死，有需要可以另外修改
+```$xslt
+    defaultProperty(INTEGRATIONTESTS_ORG + "peerOrg1.mspid", "Org1MSP");
+    defaultProperty(INTEGRATIONTESTS_ORG + "peerOrg1.domname", "org1.example.com");
+    defaultProperty(INTEGRATIONTESTS_ORG + "peerOrg1.ca_location", "http://" + LOCALHOST + ":7054");
+    defaultProperty(INTEGRATIONTESTS_ORG + "peerOrg1.caName", "ca0");
+    defaultProperty(INTEGRATIONTESTS_ORG + "peerOrg1.peer_locations", "peer0.org1.example.com@grpc://" + LOCALHOST + ":7051, peer1.org1.example.com@grpc://" + LOCALHOST + ":7056");
+    defaultProperty(INTEGRATIONTESTS_ORG + "peerOrg1.orderer_locations", "orderer.example.com@grpc://" + LOCALHOST + ":7050");
+    defaultProperty(INTEGRATIONTESTS_ORG + "peerOrg2.mspid", "Org2MSP");
+    defaultProperty(INTEGRATIONTESTS_ORG + "peerOrg2.domname", "org2.example.com");
+    defaultProperty(INTEGRATIONTESTS_ORG + "peerOrg2.ca_location", "http://" + LOCALHOST + ":8054");
+    defaultProperty(INTEGRATIONTESTS_ORG + "peerOrg2.peer_locations", "peer0.org2.example.com@grpc://" + LOCALHOST + ":8051,peer1.org2.example.com@grpc://" + LOCALHOST + ":8056");
+    defaultProperty(INTEGRATIONTESTS_ORG + "peerOrg2.orderer_locations", "orderer.example.com@grpc://" + LOCALHOST + ":7050");
+
+```
+其中，组织是根据前面名字peerOrg1这样正则切分开的，后面分别是mspid，domname，ca_location，caName，peer_locations，orderer_locations
+这是因为java sdk跑的节点是两个org，每个org有两个peer，每个org对应一个ca服务器，共用一个orderer，共7个节点，不同公司业务可能不同，这个我还没深入研究如果节点配置不同该在这里怎么修改。
+
 > ## 说明：
 > 我是后端java程序员，对hyberledger fabric 和区块链方面认知有限，bugs和可优化的地方一定是有的，欢迎提issue和修改我的代码
