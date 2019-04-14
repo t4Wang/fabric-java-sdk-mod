@@ -252,25 +252,23 @@ public class FabricChannelService {
                 out("链码初始化");
                 instantiateChaincode(chaincode, client, channel, successful, failed);
                 out("链码初始化完毕 successful.size()： " + successful.size());
-                sendTransaction(userName, enrollmentSecret, channelName, orgName, caName, caLocation, caProperties, mspid, chaincode, chaincodeFunctionName, client, channel, successful, failed);
-            } else {
-                FabricUser user = FabricUserService.enroll(userName, enrollmentSecret, mspid, orgName, caName, caLocation, caProperties);
-                client.setUserContext(user);
-                sendTransaction(chaincode, chaincodeFunctionName, client, channel, user).thenApply(transactionEvent -> {
-                    out("transactionEvent.isValid: %s", transactionEvent.isValid());
-                    out("Finished transaction with transaction id %s", transactionEvent.getTransactionID());
-                    transactionID = transactionEvent.getTransactionID();
-                    return null;
-                }).exceptionally(e -> {
-                    if (e instanceof TransactionEventException) {
-                        BlockEvent.TransactionEvent te = ((TransactionEventException) e).getTransactionEvent();
-                        if (te != null) {
-                            throw new AssertionError(format("Transaction with txid %s failed. %s", te.getTransactionID(), e.getMessage()), e);
-                        }
-                    }
-                    throw new AssertionError(format("Test failed with %s exception %s", e.getClass().getName(), e.getMessage()), e);
-                }).get(config.getTransactionWaitTime(), TimeUnit.SECONDS);  // 设置获取回调结果
             }
+            FabricUser user = FabricUserService.enroll(userName, enrollmentSecret, mspid, orgName, caName, caLocation, caProperties);
+            client.setUserContext(user);
+            sendTransaction(isInstantiated, user, channelName, orgName, caName, caLocation, caProperties, mspid, chaincode, chaincodeFunctionName, client, channel, successful, failed).thenApply(transactionEvent -> {
+                out("transactionEvent.isValid: %s", transactionEvent.isValid());
+                out("Finished transaction with transaction id %s", transactionEvent.getTransactionID());
+                transactionID = transactionEvent.getTransactionID();
+                return null;
+            }).exceptionally(e -> {
+                if (e instanceof TransactionEventException) {
+                    BlockEvent.TransactionEvent te = ((TransactionEventException) e).getTransactionEvent();
+                    if (te != null) {
+                        throw new AssertionError(format("Transaction with txid %s failed. %s", te.getTransactionID(), e.getMessage()), e);
+                    }
+                }
+                throw new AssertionError(format("Test failed with %s exception %s", e.getClass().getName(), e.getMessage()), e);
+            }).get(config.getTransactionWaitTime(), TimeUnit.SECONDS);  // 设置获取回调结果
 
             // We can only send channel queries to peers that are in the same org as the SDK user context
             // Get the peers from the current org being used and pick one randomly to send the queries to.
@@ -456,9 +454,9 @@ public class FabricChannelService {
         return installProposalRequest;
     }
 
-    static private void sendTransaction(
-            String userName,
-            String enrollmentSecret,
+    static private CompletableFuture<BlockEvent.TransactionEvent> sendTransaction(
+            boolean isInstantiated,
+            FabricUser user,
             String channelName,
             String orgName,
             String caName,
@@ -476,23 +474,16 @@ public class FabricChannelService {
         final String chaincodeName = chaincode.getChaincodeName();
         final String chaincodeVersion = chaincode.getChaincodeVersion();
         final ChaincodeID chaincodeID = chaincode.getChaincodeID();
+        final TransactionRequest.Type chaincodeLang = chaincode.getChaincodeLang();
         final Map<String, Long> expectedMoveRCMap = new HashMap<>(); // map from channel name to move chaincode's return code.
 
-        // Specify what events should complete the interest in this transaction. This is the default
-        //  for all to complete. It's possible to specify many different combinations like
-        // any from a group, all from one group and just one from another or even None(NOfEvents.createNoEvents).
-        //  See. Channel.NOfEvents
-        final Channel.NOfEvents nOfEvents = createNofEvents();
+        successful.clear();
+        failed.clear();
+
+        Channel.NOfEvents nOfEvents = createNofEvents();
         if (!channel.getPeers(EnumSet.of(Peer.PeerRole.EVENT_SOURCE)).isEmpty()) {
             nOfEvents.addPeers(channel.getPeers(EnumSet.of(Peer.PeerRole.EVENT_SOURCE)));
         }
-        channel.sendTransaction(successful, createTransactionOptions() //Basically the default options but shows it's usage.
-                .userContext(client.getUserContext()) //could be a different user context. this is the default.
-                .shuffleOrders(false) // don't shuffle any orderers the default is true.
-                .orderers(channel.getOrderers()) // specify the orderers we want to try this transaction. Fails once all Orderers are tried.
-                .nOfEvents(nOfEvents) // The events to signal the completion of the interest in the transaction
-        ).thenApply(transactionEvent -> {
-
             // assertEquals(blockEvent.getChannelId(), channel.getName());
             //            final String orgName = "peerOrg1";
             //            String caName = "ca0";
@@ -505,13 +496,6 @@ public class FabricChannelService {
             // TODO 如果eroll前都需要fabricStore.getMember 和eroll合并
             // 登记用户
             try {
-                successful.clear();
-                failed.clear();
-
-                final TransactionRequest.Type chaincodeLang = chaincode.getChaincodeLang();
-
-                FabricUser user = FabricUserService.enroll(userName, enrollmentSecret, mspid, orgName, caName, caLocation, caProperties);
-                client.setUserContext(user);
 
                 ///////////////
                 /// Send transaction proposal to all peers
@@ -523,6 +507,9 @@ public class FabricChannelService {
                 transactionProposalRequest.setFcn(function.getChaincodeFunctionName());
                 transactionProposalRequest.setProposalWaitTime(config.getProposalWaitTime());
                 transactionProposalRequest.setArgs(function.getArgs());
+                if (user != null) {
+                    transactionProposalRequest.setUserContext(user);
+                }
 
                 Map<String, byte[]> tm2 = new HashMap<>();
                 tm2.put("HyperLedgerFabric", "TransactionProposalRequest:JavaSDK".getBytes(UTF_8)); //Just some extra junk in transient map
@@ -542,8 +529,14 @@ public class FabricChannelService {
                 out("sending transactionProposal to all peers with arguments: " + functionName);
 
                 //  Collection<ProposalResponse> transactionPropResp = channel.sendTransactionProposalToEndorsers(transactionProposalRequest);
-                Collection<ProposalResponse> transactionPropResp = channel.sendTransactionProposal(transactionProposalRequest, channel.getPeers());
-                for (ProposalResponse response : transactionPropResp) {
+
+                Collection<ProposalResponse> invokePropResp;
+                if (isInstantiated) {
+                    invokePropResp = channel.sendTransactionProposal(transactionProposalRequest);
+                } else {
+                    invokePropResp = channel.sendTransactionProposal(transactionProposalRequest, channel.getPeers());
+                }
+                for (ProposalResponse response : invokePropResp) {
                     if (response.getStatus() == ProposalResponse.Status.SUCCESS) {
                         out("Successful transaction proposal response Txid: %s from peer %s", response.getTransactionID(), response.getPeer().getName());
                         successful.add(response);
@@ -553,10 +546,10 @@ public class FabricChannelService {
                 }
 
                 out("接收到 %d 交易提案响应. Successful+verified: %d . Failed: %d",
-                        transactionPropResp.size(), successful.size(), failed.size());
+                        invokePropResp.size(), successful.size(), failed.size());
                 if (failed.size() > 0) {
                     ProposalResponse firstTransactionProposalResponse = failed.iterator().next();
-                    fail("Not enough endorsers for invoke(move a,b,100):" + failed.size() + " endorser error: " +
+                    fail("Not enough endorsers for invoke:" + failed.size() + " endorser error: " +
                             firstTransactionProposalResponse.getMessage() +
                             ". Was verified: " + firstTransactionProposalResponse.isVerified());
                 }
@@ -567,155 +560,31 @@ public class FabricChannelService {
                 // See org.hyperledger.fabric.sdk.proposal.consistency_validation config property.
                 // 检查 提案 一致性
                 // 如果是发送给 Orderer 节点这个会自动完成 这里只是个示例
-                Collection<Set<ProposalResponse>> proposalConsistencySets = SDKUtils.getProposalConsistencySets(transactionPropResp);
+                Collection<Set<ProposalResponse>> proposalConsistencySets = SDKUtils.getProposalConsistencySets(invokePropResp);
                 if (proposalConsistencySets.size() != 1) {
                     fail(format("Expected only one set of consistent proposal responses but got %d", proposalConsistencySets.size()));
                 }
                 out("成功接收交易提案响应.");
-
-                //  System.exit(10);
-
-//                ProposalResponse resp = null;
-//                if (!successful.isEmpty()) {
-//                    resp = successful.iterator().next();
-//                    byte[] x = resp.getChaincodeActionResponsePayload(); // This is the data returned by the chaincode.
-//                    String resultAsString = null;
-//                    if (x != null) {
-//                        resultAsString = new String(x, UTF_8);
-//                    }
-//                    assertEquals(":)", resultAsString);
-//                    assertEquals(expectedMoveRCMap.get(channelName).intValue(), resp.getChaincodeActionResponseStatus()); //Chaincode's status.
-//
-//                    TxReadWriteSetInfo readWriteSetInfo = resp.getChaincodeActionResponseReadWriteSetInfo();
-//                    //See blockwalker below how to transverse this
-//                    assertNotNull(readWriteSetInfo);
-//                    assertTrue(readWriteSetInfo.getNsRwsetCount() > 0);
-//
-//                    ChaincodeID cid = resp.getChaincodeID();
-//                    assertNotNull(cid);
-//                    final String path = cid.getPath();
-//                    if (null == chaincodePath) {
-//                        assertTrue(path == null || "".equals(path));
-//                    } else {
-//                        assertEquals(chaincodePath, path);
-//                    }
-//
-//                    assertEquals(chaincodeName, cid.getName());
-//                    assertEquals(chaincodeVersion, cid.getVersion());
-//
-//                    ////////////////////////////
-//                    // Send Transaction Transaction to orderer
-//                    // 发送交易给orderer
-//                    out("Sending chaincode transaction to orderer.");
-//                }
-                return channel.sendTransaction(successful).get(config.getTransactionWaitTime(), TimeUnit.SECONDS);
-            } catch(Exception e) {
-                out("Caught an exception while invoking chaincode");
-                e.printStackTrace();
-                fail("Failed invoking chaincode with error : " + e.getMessage());
-            }
-            return null;
-        }).thenApply(transactionEvent -> {
-            transactionID = transactionEvent.getTransactionID();
-            return null;
-        }).exceptionally(e -> {
-            if (e instanceof TransactionEventException) {
-                BlockEvent.TransactionEvent te = ((TransactionEventException) e).getTransactionEvent();
-                if (te != null) {
-                    throw new AssertionError(format("Transaction with txid %s failed. %s", te.getTransactionID(), e.getMessage()), e);
+                if (user != null) {
+                    return channel.sendTransaction(successful, createTransactionOptions() //Basically the default options but shows it's usage.
+                            .userContext(client.getUserContext()) //could be a different user context. this is the default.
+                            .shuffleOrders(false) // don't shuffle any orderers the default is true.
+                            .orderers(channel.getOrderers()) // specify the orderers we want to try this transaction. Fails once all Orderers are tried.
+                            .nOfEvents(nOfEvents));
                 }
-            }
-            throw new AssertionError(format("Test failed with %s exception %s", e.getClass().getName(), e.getMessage()), e);
-        }).get(config.getTransactionWaitTime(), TimeUnit.SECONDS);
 
-    }
-
-    static private CompletableFuture<BlockEvent.TransactionEvent> sendTransaction(Chaincode chaincode, String fcnName, HFClient client, Channel channel, User user) {
-        final ChaincodeFunction function = chaincode.getFunction(fcnName);
-        final String chaincodeName = chaincode.getChaincodeName();
-        final String chaincodeVersion = chaincode.getChaincodeVersion();
-        final TransactionRequest.Type chaincodeLang = chaincode.getChaincodeLang();
-        final ChaincodeID chaincodeID = chaincode.getChaincodeID();
-        final Map<String, Long> expectedMoveRCMap = new HashMap<>(); // map from channel name to move chaincode's return code.
-
-        final String channelName = channel.getName();
-        try {
-            Collection<ProposalResponse> successful = new LinkedList<>();
-            Collection<ProposalResponse> failed = new LinkedList<>();
-
-            ///////////////
-            /// Send transaction proposal to all peers
-            TransactionProposalRequest transactionProposalRequest = client.newTransactionProposalRequest();
-            transactionProposalRequest.setChaincodeID(chaincodeID);
-            transactionProposalRequest.setFcn(function.getChaincodeFunctionName());
-            transactionProposalRequest.setArgs(function.getArgs());
-            transactionProposalRequest.setProposalWaitTime(config.getProposalWaitTime());
-            if (user != null) { // specific user use that
-                transactionProposalRequest.setUserContext(user);
-            }
-
-            Map<String, byte[]> tm2 = new HashMap<>();
-            tm2.put("HyperLedgerFabric", "TransactionProposalRequest:JavaSDK".getBytes(UTF_8)); //Just some extra junk in transient map
-            tm2.put("method", "TransactionProposalRequest".getBytes(UTF_8)); // ditto
-            tm2.put("result", ":)".getBytes(UTF_8));  // This should be returned in the payload see chaincode why.
-            if (TransactionRequest.Type.GO_LANG.equals(chaincodeLang) && config.isFabricVersionAtOrAfter("1.2")) {
-                expectedMoveRCMap.put(channelName, random.nextInt(300) + 100L); // the chaincode will return this as status see chaincode why.
-                tm2.put("rc", (expectedMoveRCMap.get(channelName) + "").getBytes(UTF_8));  // This should be returned see chaincode why.
-                // 400 and above results in the peer not endorsing!
-            } else {
-                expectedMoveRCMap.put(channelName, 200L); // not really supported for Java or Node.
-            }
-            // 要获取事件回调，必须传入 EXPECTED_EVENT_NAME
-            tm2.put(EXPECTED_EVENT_NAME, EXPECTED_EVENT_DATA);  //This should trigger an event see chaincode why.
-
-            transactionProposalRequest.setTransientMap(tm2);
-
-            Collection<ProposalResponse> invokePropResp = channel.sendTransactionProposal(transactionProposalRequest);
-            for (ProposalResponse response : invokePropResp) {
-                if (response.getStatus() == ChaincodeResponse.Status.SUCCESS) {
-                    out("Successful transaction proposal response Txid: %s from peer %s", response.getTransactionID(), response.getPeer().getName());
-                    successful.add(response);
-                } else {
-                    failed.add(response);
-                }
-            }
-
-            out("Received %d transaction proposal responses. Successful+verified: %d . Failed: %d",
-                    invokePropResp.size(), successful.size(), failed.size());
-            if (failed.size() > 0) {
-                ProposalResponse firstTransactionProposalResponse = failed.iterator().next();
-
-                throw new ProposalException(format("Not enough endorsers for invoke(move a,b,%s):%d endorser error:%s. Was verified:%b",
-                        fcnName, firstTransactionProposalResponse.getStatus().getStatus(), firstTransactionProposalResponse.getMessage(), firstTransactionProposalResponse.isVerified()));
-
-            }
-            out("Successfully received transaction proposal responses.");
-
-            Channel.NOfEvents nOfEvents = createNofEvents();
-            if (!channel.getPeers(EnumSet.of(Peer.PeerRole.EVENT_SOURCE)).isEmpty()) {
-                nOfEvents.addPeers(channel.getPeers(EnumSet.of(Peer.PeerRole.EVENT_SOURCE)));
-            }
-            ////////////////////////////
-            // Send transaction to orderer
-            out("Sending chaincode transaction to orderer.");
-            if (user != null) {
                 return channel.sendTransaction(successful, createTransactionOptions() //Basically the default options but shows it's usage.
                         .userContext(client.getUserContext()) //could be a different user context. this is the default.
                         .shuffleOrders(false) // don't shuffle any orderers the default is true.
                         .orderers(channel.getOrderers()) // specify the orderers we want to try this transaction. Fails once all Orderers are tried.
-                        .nOfEvents(nOfEvents));
+                        .nOfEvents(nOfEvents) // The events to signal the completion of the interest in the transaction
+                );
+            } catch(Exception e) {
+                out("Caught an exception while invoking chaincode");
+                e.printStackTrace();
+                fail("Failed invoking chaincode with error : " + e.getMessage());
+                throw e;
             }
-
-            return channel.sendTransaction(successful, createTransactionOptions() //Basically the default options but shows it's usage.
-                    .userContext(client.getUserContext()) //could be a different user context. this is the default.
-                    .shuffleOrders(false) // don't shuffle any orderers the default is true.
-                    .orderers(channel.getOrderers()) // specify the orderers we want to try this transaction. Fails once all Orderers are tried.
-                    .nOfEvents(nOfEvents) // The events to signal the completion of the interest in the transaction
-            );
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new CompletionException(e);
-        }
     }
 
     static private void instantiateChaincode(Chaincode chaincode, HFClient client, Channel channel, Collection<ProposalResponse> successful, Collection<ProposalResponse> failed) throws InvalidArgumentException, IOException, ChaincodeEndorsementPolicyParseException, ProposalException {
