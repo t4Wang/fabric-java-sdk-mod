@@ -23,7 +23,7 @@ query chaincode
 
 ## pom.xml 依赖
 
-``` xml
+```xml
 <!-- hyperledger fabric -->
 <!-- https://mvnrepository.com/artifact/org.hyperledger.fabric-sdk-java/fabric-sdk-java -->
 <dependency>
@@ -38,9 +38,8 @@ query chaincode
 [参考sdk](https://github.com/hyperledger/fabric-sdk-java#channel-creation-artifacts)
 
 生成*.tx文件的命令：
-``` cmd
+```cmd
 cd /项目路径/src/test/fixture/sdkintegration/e2e-2Orgs/v1.3
-
 configtxgen --configPath . -outputCreateChannelTx 通道名.tx -profile TwoOrgsChannel_v13 -channelID 通道名
 ```
 
@@ -49,7 +48,7 @@ configtxgen --configPath . -outputCreateChannelTx 通道名.tx -profile TwoOrgsC
 ## 组织节点配置
 
 在`com.routz.fabricdemo.integration.utilConfigManager`里将组织节点都配置好了，因为我这的业务是基本一上线就不会改动了，所以在这写死，有需要可以另外修改
-```$xslt
+```java
     defaultProperty(INTEGRATIONTESTS_ORG + "peerOrg1.mspid", "Org1MSP");
     defaultProperty(INTEGRATIONTESTS_ORG + "peerOrg1.domname", "org1.example.com");
     defaultProperty(INTEGRATIONTESTS_ORG + "peerOrg1.ca_location", "http://" + LOCALHOST + ":7054");
