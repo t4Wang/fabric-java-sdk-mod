@@ -1,4 +1,4 @@
-# 官方fabric-java-sdk 修改整合版
+# 官方hyberledger fabric java sdk 修改整合版
 
 > 这个版本根据官方[hyperledger/fabric-sdk-java](https://github.com/hyperledger/fabric-sdk-java)项目的
 /src/test/java/sdkintegration/org.hyperledger.fabric.sdkintegration.End2endIT类修改而来。
@@ -45,3 +45,6 @@ configtxgen --configPath . -outputCreateChannelTx 通道名.tx -profile TwoOrgsC
 ```
 
 这样就在目录下生成`通道名.tx`文件了
+
+> ## 说明：
+> 我是后端java程序员，对hyberledger fabric 和区块链方面认知有限，bugs和可优化的地方一定是有的，欢迎提issue和修改我的代码
