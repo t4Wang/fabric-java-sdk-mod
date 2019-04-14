@@ -35,7 +35,7 @@ query chaincode
 
 ## 组织节点配置
 
-在`com.routz.fabricdemo.integration.utilConfigManager`里将组织节点都配置好了，因为我这的业务是基本一上线就不会改动了，所以在这写死，有需要可以另外修改
+在`com.routz.fabricdemo.integration.util.ConfigManager`里将组织节点都配置好了，因为我这的业务是基本一上线就不会改动了，所以在这写死，有需要可以另外修改
 ```java
     defaultProperty(INTEGRATIONTESTS_ORG + "peerOrg1.mspid", "Org1MSP");
     defaultProperty(INTEGRATIONTESTS_ORG + "peerOrg1.domname", "org1.example.com");

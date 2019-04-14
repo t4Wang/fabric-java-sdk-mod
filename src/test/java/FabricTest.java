@@ -13,7 +13,7 @@ public class FabricTest {
 
     static private final ConfigManager config = FabricFactory.getConfig();
 
-    static final private String CHANNEL_NAME = "dang";
+    static final private String CHANNEL_NAME = "foo";
     static final private String ORG_NAME = "peerOrg1";
     static final private String TEST_USER_NAME = "user1";
     static final private String TEST_USER_SECRET = "HzpQJymxQFCm";
