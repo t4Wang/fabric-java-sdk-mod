@@ -16,7 +16,7 @@ public class FabricTest {
     static final private String CHANNEL_NAME = "dang";
     static final private String ORG_NAME = "peerOrg1";
     static final private String TEST_USER_NAME = "user1";
-    static final private String TEST_USER_SECRET = "eTBLJuUAJGBT";
+    static final private String TEST_USER_SECRET = "HzpQJymxQFCm";
 
     @Test
     public void registerUser() throws Exception {

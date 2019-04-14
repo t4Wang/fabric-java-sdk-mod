@@ -33,18 +33,6 @@ query chaincode
 </dependency>
 ```
 
-## 生成通道
-官方自带通道foo和bar的tx文件，如果要自定义创建通道时，要先在服务器上生成*.tx文件，拷贝到项目路径下，将路径作为参数调用
-[参考sdk](https://github.com/hyperledger/fabric-sdk-java#channel-creation-artifacts)
-
-生成*.tx文件的命令：
-```cmd
-cd /项目路径/src/test/fixture/sdkintegration/e2e-2Orgs/v1.3
-configtxgen --configPath . -outputCreateChannelTx 通道名.tx -profile TwoOrgsChannel_v13 -channelID 通道名
-```
-
-这样就在目录下生成`通道名.tx`文件了
-
 ## 组织节点配置
 
 在`com.routz.fabricdemo.integration.utilConfigManager`里将组织节点都配置好了，因为我这的业务是基本一上线就不会改动了，所以在这写死，有需要可以另外修改
@@ -64,6 +52,19 @@ configtxgen --configPath . -outputCreateChannelTx 通道名.tx -profile TwoOrgsC
 ```
 其中，组织是根据前面名字peerOrg1这样正则切分开的，后面分别是mspid，domname，ca_location，caName，peer_locations，orderer_locations
 这是因为java sdk跑的节点是两个org，每个org有两个peer，每个org对应一个ca服务器，共用一个orderer，共7个节点，不同公司业务可能不同，这个我还没深入研究如果节点配置不同该在这里怎么修改。
+还需要注意的是，我在上面的LOCALHOST变量里面配置的本地虚拟机ip，需要按实际情况修改
+
+## 生成通道
+官方自带通道foo和bar的tx文件，如果要自定义创建通道时，要先在服务器上生成*.tx文件，拷贝到项目路径下，将路径作为参数调用
+[参考sdk](https://github.com/hyperledger/fabric-sdk-java#channel-creation-artifacts)
+
+生成*.tx文件的命令：
+```cmd
+cd /项目路径/src/test/fixture/sdkintegration/e2e-2Orgs/v1.3
+configtxgen --configPath . -outputCreateChannelTx 通道名.tx -profile TwoOrgsChannel_v13 -channelID 通道名
+```
+
+这样就在目录下生成`通道名.tx`文件了
 
 > ## 说明：
 > 我是后端java程序员，对hyberledger fabric 和区块链方面认知有限，bugs和可优化的地方一定是有的，欢迎提issue和修改我的代码
