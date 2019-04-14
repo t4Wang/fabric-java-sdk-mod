@@ -1,4 +1,5 @@
 import com.routz.fabricdemo.integration.domain.FabricUser;
+import com.routz.fabricdemo.integration.domain.TransInfo;
 import com.routz.fabricdemo.integration.service.FabricChannelService;
 import com.routz.fabricdemo.integration.service.FabricUserService;
 import com.routz.fabricdemo.integration.util.ConfigManager;
@@ -41,7 +42,13 @@ public class FabricTest {
     public void invoke() throws Exception {
         String[] initArgs = {"a", "500", "b", "" + 200};
         String[] chaincodeFunctionArgs = {"a", "b", "5"};
-        FabricChannelService.invoke(initArgs, "move", chaincodeFunctionArgs, TEST_USER_NAME, TEST_USER_SECRET, CHANNEL_NAME, ORG_NAME);
+        TransInfo move = FabricChannelService.invoke(initArgs, "move", chaincodeFunctionArgs, TEST_USER_NAME, TEST_USER_SECRET, CHANNEL_NAME, ORG_NAME);
+
+        System.out.println(move.getChannelHeight());
+        System.out.println(move.getBlockNumber());
+        System.out.println(move.getBlockHash());
+        System.out.println(move.getPreviousBlockHash());
+        System.out.println(move.getTransactionId());
     }
     @Test
     public void query() {

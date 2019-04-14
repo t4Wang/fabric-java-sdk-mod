@@ -1,10 +1,12 @@
 package com.routz.fabricdemo.integration.service;
 
+import com.google.protobuf.InvalidProtocolBufferException;
 import com.routz.fabricdemo.integration.domain.Chaincode;
 import com.routz.fabricdemo.integration.domain.ChaincodeFunction;
 import com.routz.fabricdemo.integration.domain.FabricOrg;
 import com.routz.fabricdemo.integration.domain.FabricStore;
 import com.routz.fabricdemo.integration.domain.FabricUser;
+import com.routz.fabricdemo.integration.domain.TransInfo;
 import com.routz.fabricdemo.integration.util.ConfigManager;
 import com.routz.fabricdemo.integration.util.ConfigUtils;
 import com.routz.fabricdemo.integration.util.FabricFactory;
@@ -62,20 +64,26 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hyperledger.fabric.sdk.Channel.NOfEvents.createNofEvents;
 import static org.hyperledger.fabric.sdk.Channel.TransactionOptions.createTransactionOptions;
 
+/**
+ * 通道操作
+ *
+ * 包含操作：
+ * 构建通道
+ * 安装链码
+ * 调用链码
+ * 查询链码
+ *
+ */
 public class FabricChannelService {
 
     static private final ConfigManager config = FabricFactory.getConfig();
-
     static private final FabricStore fabricStore = FabricFactory.getFabricStore();
-
-    private static Random random = new Random();
-
-    private static final int DEPLOYWAITTIME = config.getDeployWaitTime();
-
-    private static final byte[] EXPECTED_EVENT_DATA = "!".getBytes(UTF_8);
-    private static final String EXPECTED_EVENT_NAME = "event";
-
-    private static final ConfigUtils configHelper = new ConfigUtils();
+    static private Random random = new Random();
+    static private final int DEPLOYWAITTIME = config.getDeployWaitTime();
+    static private final byte[] EXPECTED_EVENT_DATA = "!".getBytes(UTF_8);
+    static private final String EXPECTED_EVENT_NAME = "event";
+    static private final ConfigUtils configHelper = new ConfigUtils();
+    static private String transactionID = null;
 
     static {
         ConfigUtils.resetConfig();
@@ -89,10 +97,14 @@ public class FabricChannelService {
         }
     }
 
+    /**
+     * 构建通道
+     * @param channelName               通道名
+     * @param channelConfigurationPath  通道tx文件路径
+     * @param orgName                   组织名
+     * @throws Exception                异常
+     */
     static public void constructChannel(String channelName, String channelConfigurationPath, String orgName) throws Exception {
-//        String channelConfigurationPath = TEST_FIXTURES_PATH + "/sdkintegration/e2e-2Orgs/" + config.getFabricConfigGenVers() + "/" + name + ".tx";
-//        String channelName = FOO_CHANNEL_NAME;
-//        FabricOrg fabricOrg = testConfig.getIntegrationTestsFabricOrg("peerOrg1");
         FabricOrg fabricOrg = config.getIntegrationTestsFabricOrg(orgName);
         HFClient client = FabricFactory.getHFClient();
         // Only peer Admin org
@@ -116,19 +128,16 @@ public class FabricChannelService {
         for (Orderer orderer : orderers) { //add remaining orderers if any.
             newChannel.addOrderer(orderer);
         }
-        //Just checks if channel can be serialized and deserialized .. otherwise this is just a waste :)
-//        byte[] serializedChannelBytes = newChannel.serializeChannel();
-//        newChannel.shutdown(true);
-//        Channel fooChannel = client.deSerializeChannel(serializedChannelBytes).initialize();
     }
 
+    /**
+     * 安装链码
+     * @param orgName       组织名
+     * @param channelName   通道名
+     * @throws Exception    异常
+     */
     static public void installChaincode(String orgName, String channelName) throws Exception {
         try {
-//            File chaincodeLocation = Paths.get(TEST_FIXTURES_PATH, CHAIN_CODE_FILEPATH).toFile();
-//            File chaincodeMetaInfLocation = new File("src/test/fixture/meta-infs/end2endit");
-//            File chaincodeEndorsementPolicyYamlFile = new File(TEST_FIXTURES_PATH + "/sdkintegration/chaincodeendorsementpolicy.yaml");
-//            FabricOrg fabricOrg = config.getIntegrationTestsFabricOrg("peerOrg1");
-//            String channelName = FOO_CHANNEL_NAME;
             FabricOrg fabricOrg = config.getIntegrationTestsFabricOrg(orgName);
 
             HFClient client = FabricFactory.getHFClient();
@@ -184,23 +193,26 @@ public class FabricChannelService {
         }
     }
 
-    static String transactionID = null;
-
-    static public void invoke(String[] initArgs, String chaincodeFunctionName, String[] chaincodeFunctionArgs, String userName, String enrollmentSecret, String channelName, String orgName) throws Exception {
+    /**
+     * 调用链码
+     * @param initArgs                  链码init函数的参数
+     * @param chaincodeFunctionName     调用链码函数的名字
+     * @param chaincodeFunctionArgs     调用链码函数的参数
+     * @param userName                  调用者用户名
+     * @param enrollmentSecret          调用者密钥
+     * @param channelName               通道名
+     * @param orgName                   组织名
+     * @throws Exception                异常
+     */
+    static public TransInfo invoke(String[] initArgs, String chaincodeFunctionName, String[] chaincodeFunctionArgs, String userName, String enrollmentSecret, String channelName, String orgName) throws Exception {
         FabricOrg fabricOrg = config.getIntegrationTestsFabricOrg(orgName);
-//        FabricOrg fabricOrg = config.getIntegrationTestsFabricOrg("peerOrg1");
-//        String channelName = FOO_CHANNEL_NAME;
-//        final String orgName = fabricOrg.getName();
         final String caName = fabricOrg.getCAName();
         final String caLocation = fabricOrg.getCALocation();
         final Properties caProperties = fabricOrg.getCAProperties();
         final String mspid = fabricOrg.getMSPID();
 
-//        String[] initArgs = {"a", "500", "b", "" + (200 + delta)};
         ChaincodeFunction initChaincodeFunction = new ChaincodeFunction("init", initArgs);
 
-//        String[] chaincodeFunctionArgs = {"a", "b", "100"};
-//        ChaincodeFunction chaincodeFunction = new ChaincodeFunction("move", chaincodeFunctionArgs);
         ChaincodeFunction chaincodeFunction = new ChaincodeFunction(chaincodeFunctionName, chaincodeFunctionArgs);
 
         Chaincode chaincode = new Chaincode();
@@ -224,8 +236,6 @@ public class FabricChannelService {
 
         fabricStore.saveChannel(channel);
 
-        // client, fooChannel, true, fabricOrg, 0
-
         // 测试捕获链码事务的列表
         Vector<ChaincodeEventCapture> chaincodeEvents = new Vector<>(); // Test list to capture chaincode events.
 
@@ -235,139 +245,132 @@ public class FabricChannelService {
         final Collection<ProposalResponse> successful = new LinkedList<>();
         final Collection<ProposalResponse> failed = new LinkedList<>();
 
-        try {
-            // 查询链码状态
-            // 如果没instantiate再instantiate
-            boolean isInstantiated = false;
-            for (Peer peer : channel.getPeers()) {
-                if (FabricFactory.checkInstantiatedChaincode(channel, peer, chaincode.getChaincodeName(), chaincode.getChaincodePath(), chaincode.getChaincodeVersion())) {
-                    // 安装过链码
-                    out("链码已初始化");
-                    isInstantiated = true;
-                    break;
-                }
+        // 查询链码状态
+        // 如果没instantiate再instantiate
+        boolean isInstantiated = false;
+        for (Peer peer : channel.getPeers()) {
+            if (FabricFactory.checkInstantiatedChaincode(channel, peer, chaincode.getChaincodeName(), chaincode.getChaincodePath(), chaincode.getChaincodeVersion())) {
+                // 安装过链码
+                out("链码已初始化");
+                isInstantiated = true;
+                break;
             }
-
-            if (!isInstantiated) {
-                out("链码初始化");
-                instantiateChaincode(chaincode, client, channel, successful, failed);
-                out("链码初始化完毕 successful.size()： " + successful.size());
-            }
-            FabricUser user = FabricUserService.enroll(userName, enrollmentSecret, mspid, orgName, caName, caLocation, caProperties);
-            client.setUserContext(user);
-            sendTransaction(isInstantiated, user, channelName, orgName, caName, caLocation, caProperties, mspid, chaincode, chaincodeFunctionName, client, channel, successful, failed).thenApply(transactionEvent -> {
-                out("transactionEvent.isValid: %s", transactionEvent.isValid());
-                out("Finished transaction with transaction id %s", transactionEvent.getTransactionID());
-                transactionID = transactionEvent.getTransactionID();
-                return null;
-            }).exceptionally(e -> {
-                if (e instanceof TransactionEventException) {
-                    BlockEvent.TransactionEvent te = ((TransactionEventException) e).getTransactionEvent();
-                    if (te != null) {
-                        throw new AssertionError(format("Transaction with txid %s failed. %s", te.getTransactionID(), e.getMessage()), e);
-                    }
-                }
-                throw new AssertionError(format("Test failed with %s exception %s", e.getClass().getName(), e.getMessage()), e);
-            }).get(config.getTransactionWaitTime(), TimeUnit.SECONDS);  // 设置获取回调结果
-
-            // We can only send channel queries to peers that are in the same org as the SDK user context
-            // Get the peers from the current org being used and pick one randomly to send the queries to.
-            //  Set<Peer> peerSet = sampleOrg.getPeers();
-            //  Peer queryPeer = peerSet.iterator().next();
-            //   out("Using peer %s for channel queries", queryPeer.getName());
-
-            BlockchainInfo channelInfo = channel.queryBlockchainInfo();
-            out("Channel info for : " + channelName);
-            out("Channel height: " + channelInfo.getHeight());
-            String chainCurrentHash = Hex.encodeHexString(channelInfo.getCurrentBlockHash());
-            String chainPreviousHash = Hex.encodeHexString(channelInfo.getPreviousBlockHash());
-            out("Chain current block hash: " + chainCurrentHash);
-            out("Chainl previous block hash: " + chainPreviousHash);
-
-            // Query by block number. Should return latest block, i.e. block number 2
-            BlockInfo returnedBlock = channel.queryBlockByNumber(channelInfo.getHeight() - 1);
-            String previousHash = Hex.encodeHexString(returnedBlock.getPreviousHash());
-            out("queryBlockByNumber returned correct block with blockNumber " + returnedBlock.getBlockNumber()
-                    + " \n previous_hash " + previousHash);
-            assertEquals(channelInfo.getHeight() - 1, returnedBlock.getBlockNumber());
-            assertEquals(chainPreviousHash, previousHash);
-
-            // Query by block hash. Using latest block's previous hash so should return block number 1
-            byte[] hashQuery = returnedBlock.getPreviousHash();
-            returnedBlock = channel.queryBlockByHash(hashQuery);
-            out("queryBlockByHash returned block with blockNumber " + returnedBlock.getBlockNumber());
-            assertEquals(channelInfo.getHeight() - 2, returnedBlock.getBlockNumber());
-
-            // Query block by TxID. Since it's the last TxID, should be block 2
-            returnedBlock = channel.queryBlockByTransactionID(transactionID);
-            out("queryBlockByTxID returned block with blockNumber " + returnedBlock.getBlockNumber());
-            assertEquals(channelInfo.getHeight() - 1, returnedBlock.getBlockNumber());
-
-            // query transaction by ID
-            TransactionInfo txInfo = channel.queryTransactionByID(transactionID);
-            out("QueryTransactionByID returned TransactionInfo: txID " + txInfo.getTransactionID()
-                    + "\n     validation code " + txInfo.getValidationCode().getNumber());
-
-            if (chaincodeEventListenerHandler != null) {
-                channel.unregisterChaincodeEventListener(chaincodeEventListenerHandler);
-
-                final int numberEventsExpected =
-                        channel.getPeers(EnumSet.of(Peer.PeerRole.EVENT_SOURCE)).size();
-                //just make sure we get the notifications.
-                for (int i = 15; i > 0; --i) {
-                    if (chaincodeEvents.size() == numberEventsExpected) {
-                        break;
-                    } else {
-                        Thread.sleep(90); // wait for the events.
-                    }
-
-                }
-                assertEquals(numberEventsExpected, chaincodeEvents.size());
-
-                for (ChaincodeEventCapture chaincodeEventCapture : chaincodeEvents) {
-                    assertEquals(chaincodeEventListenerHandler, chaincodeEventCapture.handle);
-                    assertEquals(transactionID, chaincodeEventCapture.chaincodeEvent.getTxId());
-                    assertEquals(EXPECTED_EVENT_NAME, chaincodeEventCapture.chaincodeEvent.getEventName());
-                    assertTrue(Arrays.equals(EXPECTED_EVENT_DATA, chaincodeEventCapture.chaincodeEvent.getPayload()));
-                    assertEquals(chaincode.getChaincodeName(), chaincodeEventCapture.chaincodeEvent.getChaincodeId());
-
-                    BlockEvent blockEvent = chaincodeEventCapture.blockEvent;
-                    assertEquals(channelName, blockEvent.getChannelId());
-                }
-            } else {
-                assertTrue(chaincodeEvents.isEmpty());
-            }
-
-            out("Running for Channel %s done", channelName);
-        } catch (Exception e) {
-            out("Caught an exception while invoking chaincode");
-            e.printStackTrace();
-            fail("Failed invoking chaincode with error : " + e.getMessage());
         }
+
+        if (!isInstantiated) {
+            out("链码初始化");
+            instantiateChaincode(chaincode, client, channel, successful, failed);
+            out("链码初始化完毕 successful.size()： " + successful.size());
+        }
+        FabricUser user = FabricUserService.enroll(userName, enrollmentSecret, mspid, orgName, caName, caLocation, caProperties);
+        client.setUserContext(user);
+        sendTransaction(isInstantiated, user, channelName, orgName, caName, caLocation, caProperties, mspid, chaincode, chaincodeFunctionName, client, channel, successful, failed).thenApply(transactionEvent -> {
+            out("transactionEvent.isValid: %s", transactionEvent.isValid());
+            out("Finished transaction with transaction id %s", transactionEvent.getTransactionID());
+            transactionID = transactionEvent.getTransactionID();
+            return null;
+        }).exceptionally(e -> {
+            if (e instanceof TransactionEventException) {
+                BlockEvent.TransactionEvent te = ((TransactionEventException) e).getTransactionEvent();
+                if (te != null) {
+                    throw new AssertionError(format("Transaction with txid %s failed. %s", te.getTransactionID(), e.getMessage()), e);
+                }
+            }
+            throw new AssertionError(format("Test failed with %s exception %s", e.getClass().getName(), e.getMessage()), e);
+        }).get(config.getTransactionWaitTime(), TimeUnit.SECONDS);  // 设置获取回调结果
+
+        out("Running for Channel %s done", channelName);
+
+        return getBlockchainInfo(channelName, chaincode, channel, chaincodeEvents, chaincodeEventListenerHandler);
     }
 
+    private static TransInfo getBlockchainInfo(String channelName, Chaincode chaincode, Channel channel, Vector<ChaincodeEventCapture> chaincodeEvents, String chaincodeEventListenerHandler) throws ProposalException, InvalidArgumentException, InterruptedException, InvalidProtocolBufferException {
+        // We can only send channel queries to peers that are in the same org as the SDK user context
+        // Get the peers from the current org being used and pick one randomly to send the queries to.
+        //  Set<Peer> peerSet = sampleOrg.getPeers();
+        //  Peer queryPeer = peerSet.iterator().next();
+        //   out("Using peer %s for channel queries", queryPeer.getName());
+
+        BlockchainInfo channelInfo = channel.queryBlockchainInfo();
+        out("Channel info for : " + channelName);
+        out("Channel height: " + channelInfo.getHeight());
+        String chainCurrentHash = Hex.encodeHexString(channelInfo.getCurrentBlockHash());
+        String chainPreviousHash = Hex.encodeHexString(channelInfo.getPreviousBlockHash());
+        out("Chain current block hash: " + chainCurrentHash);
+        out("Chainl previous block hash: " + chainPreviousHash);
+
+        // Query by block number. Should return latest block, i.e. block number 2
+        BlockInfo returnedBlock = channel.queryBlockByNumber(channelInfo.getHeight() - 1);
+        String previousHash = Hex.encodeHexString(returnedBlock.getPreviousHash());
+        out("queryBlockByNumber returned correct block with blockNumber " + returnedBlock.getBlockNumber()
+                + " \n previous_hash " + previousHash);
+        assertEquals(channelInfo.getHeight() - 1, returnedBlock.getBlockNumber());
+        assertEquals(chainPreviousHash, previousHash);
+
+        // Query by block hash. Using latest block's previous hash so should return block number 1
+        byte[] hashQuery = returnedBlock.getPreviousHash();
+        returnedBlock = channel.queryBlockByHash(hashQuery);
+        out("queryBlockByHash returned block with blockNumber " + returnedBlock.getBlockNumber());
+        assertEquals(channelInfo.getHeight() - 2, returnedBlock.getBlockNumber());
+
+        // Query block by TxID. Since it's the last TxID, should be block 2
+        returnedBlock = channel.queryBlockByTransactionID(transactionID);
+        out("queryBlockByTxID returned block with blockNumber " + returnedBlock.getBlockNumber());
+        assertEquals(channelInfo.getHeight() - 1, returnedBlock.getBlockNumber());
+
+        // query transaction by ID
+        TransactionInfo txInfo = channel.queryTransactionByID(transactionID);
+        out("QueryTransactionByID returned TransactionInfo: txID " + txInfo.getTransactionID()
+                + "\n     validation code " + txInfo.getValidationCode().getNumber());
+
+        if (chaincodeEventListenerHandler != null) {
+            channel.unregisterChaincodeEventListener(chaincodeEventListenerHandler);
+
+            final int numberEventsExpected =
+                    channel.getPeers(EnumSet.of(Peer.PeerRole.EVENT_SOURCE)).size();
+            //just make sure we get the notifications.
+            for (int i = 15; i > 0; --i) {
+                if (chaincodeEvents.size() == numberEventsExpected) {
+                    break;
+                } else {
+                    Thread.sleep(90); // wait for the events.
+                }
+
+            }
+            assertEquals(numberEventsExpected, chaincodeEvents.size());
+
+            for (ChaincodeEventCapture chaincodeEventCapture : chaincodeEvents) {
+                assertEquals(chaincodeEventListenerHandler, chaincodeEventCapture.handle);
+                assertEquals(transactionID, chaincodeEventCapture.chaincodeEvent.getTxId());
+                assertEquals(EXPECTED_EVENT_NAME, chaincodeEventCapture.chaincodeEvent.getEventName());
+                assertTrue(Arrays.equals(EXPECTED_EVENT_DATA, chaincodeEventCapture.chaincodeEvent.getPayload()));
+                assertEquals(chaincode.getChaincodeName(), chaincodeEventCapture.chaincodeEvent.getChaincodeId());
+
+                BlockEvent blockEvent = chaincodeEventCapture.blockEvent;
+                assertEquals(channelName, blockEvent.getChannelId());
+            }
+        } else {
+            assertTrue(chaincodeEvents.isEmpty());
+        }
+        return new TransInfo(channelInfo.getHeight(), returnedBlock.getBlockNumber(), chainCurrentHash, chainPreviousHash, txInfo.getTransactionID());
+    }
+
+    /**
+     * 查询链码
+     * @param chaincodeQueryFunctionName    查询函数名
+     * @param chaincodeFunctionArgs         查询参数
+     * @param userName                      查询者用户名
+     * @param enrollmentSecret              查询者密钥
+     * @param channelName                   通道名
+     * @param orgName                       组织名
+     */
     static public void queryTransaction(String chaincodeQueryFunctionName, String[] chaincodeFunctionArgs, String userName, String enrollmentSecret, String channelName, String orgName) {
         try {
-//            final String orgName = fabricOrg.getName();
             final FabricOrg fabricOrg = config.getIntegrationTestsFabricOrg(orgName);
             final String caName = fabricOrg.getCAName();
             final String caLocation = fabricOrg.getCALocation();
             final Properties caProperties = fabricOrg.getCAProperties();
             final String mspid = fabricOrg.getMSPID();
-//            final String orgName = "peerOrg1";
-//            String caName = "ca0";
-//            String caLocation = "http://192.168.1.66:7054";
-//            Properties caProperties = null;
-//            final String mspid = "Org1MSP";
-//            String domainName = "org1.example.com";
-
-//            File chaincodeLocation = Paths.get(TEST_FIXTURES_PATH, CHAIN_CODE_FILEPATH).toFile();
-//            File chaincodeMetaInfLocation = new File("src/test/fixture/meta-infs/end2endit");
-//            File chaincodeEndorsementPolicyYamlFile = new File(TEST_FIXTURES_PATH + "/sdkintegration/chaincodeendorsementpolicy.yaml");
-//            FabricOrg fabricOrg = config.getIntegrationTestsFabricOrg("peerOrg1");
-//            String channelName = FOO_CHANNEL_NAME;
-//            final String[] chaincodeFunctionArgs = {"b"};
-            // "query"
             final ChaincodeFunction chaincodeFunction = new ChaincodeFunction(chaincodeQueryFunctionName, chaincodeFunctionArgs);
             final Chaincode chaincode = new Chaincode();
             final ChaincodeID chaincodeID = chaincode.getChaincodeID();
