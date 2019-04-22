@@ -136,7 +136,7 @@ public class FabricChannelService {
      * @param channelName   通道名
      * @throws Exception    异常
      */
-    static public void installChaincode(String orgName, String channelName) throws Exception {
+    static public void installChaincode(String orgName, String channelName, Chaincode chaincode) throws Exception {
         try {
             FabricOrg fabricOrg = config.getIntegrationTestsFabricOrg(orgName);
 
@@ -168,7 +168,7 @@ public class FabricChannelService {
             // Register a chaincode event listener that will trigger for any chaincode id and only for EXPECTED_EVENT_NAME event.
             getChaincodeEventListenerHandler(channel, chaincodeEvents);
 
-            InstallProposalRequest installProposalRequest = getInstallProposalRequest(client);
+            InstallProposalRequest installProposalRequest = getInstallProposalRequest(client, chaincode);
 
             ////////////////////////////
             // 客户端只能向自己组织的节点发送安装请求
@@ -436,8 +436,7 @@ public class FabricChannelService {
         }
     }
 
-    static private InstallProposalRequest getInstallProposalRequest(HFClient client) throws InvalidArgumentException {
-        final Chaincode chaincode = new Chaincode();
+    static private InstallProposalRequest getInstallProposalRequest(HFClient client, Chaincode chaincode) throws InvalidArgumentException {
         final File chaincodeLocation = chaincode.getChaincodeLocation();
         final File chaincodeMetaInfLocation = chaincode.getChaincodeMetaInfLocation();
         final String chaincodeName = chaincode.getChaincodeName();
@@ -479,9 +478,6 @@ public class FabricChannelService {
         final ChaincodeID chaincodeID = chaincode.getChaincodeID();
         final TransactionRequest.Type chaincodeLang = chaincode.getChaincodeLang();
         final Map<String, Long> expectedMoveRCMap = new HashMap<>(); // map from channel name to move chaincode's return code.
-
-        successful.clear();
-        failed.clear();
 
         Channel.NOfEvents nOfEvents = createNofEvents();
         if (!channel.getPeers(EnumSet.of(Peer.PeerRole.EVENT_SOURCE)).isEmpty()) {
@@ -539,6 +535,9 @@ public class FabricChannelService {
                 } else {
                     invokePropResp = channel.sendTransactionProposal(transactionProposalRequest, channel.getPeers());
                 }
+
+                successful.clear();
+                failed.clear();
                 for (ProposalResponse response : invokePropResp) {
                     if (response.getStatus() == ProposalResponse.Status.SUCCESS) {
                         out("Successful transaction proposal response Txid: %s from peer %s", response.getTransactionID(), response.getPeer().getName());

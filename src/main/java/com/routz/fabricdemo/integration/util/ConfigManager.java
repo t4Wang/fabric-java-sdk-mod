@@ -141,16 +141,17 @@ public class ConfigManager {
 
             //////
             defaultProperty(INTEGRATIONTESTS_ORG + "peerOrg1.mspid", "Org1MSP");
-            defaultProperty(INTEGRATIONTESTS_ORG + "peerOrg1.domname", "org1.example.com");
-            defaultProperty(INTEGRATIONTESTS_ORG + "peerOrg1.ca_location", "http://" + LOCALHOST + ":7054");
+            defaultProperty(INTEGRATIONTESTS_ORG + "peerOrg1.domname", "org1.xidata.com.cn");
+            defaultProperty(INTEGRATIONTESTS_ORG + "peerOrg1.ca_location", "http://192.168.1.46:7054");
             defaultProperty(INTEGRATIONTESTS_ORG + "peerOrg1.caName", "ca0");
-            defaultProperty(INTEGRATIONTESTS_ORG + "peerOrg1.peer_locations", "peer0.org1.example.com@grpc://" + LOCALHOST + ":7051, peer1.org1.example.com@grpc://" + LOCALHOST + ":7056");
-            defaultProperty(INTEGRATIONTESTS_ORG + "peerOrg1.orderer_locations", "orderer.example.com@grpc://" + LOCALHOST + ":7050");
+            defaultProperty(INTEGRATIONTESTS_ORG + "peerOrg1.peer_locations", "peer0.org1.xidata.com.cn@grpc://192.168.1.41:7051,peer1.org1.xidata.com.cn@grpc://192.168.1.42:7051");
+            defaultProperty(INTEGRATIONTESTS_ORG + "peerOrg1.orderer_locations", "orderer.xidata.com.cn@grpc://192.168.1.45:7050");
             defaultProperty(INTEGRATIONTESTS_ORG + "peerOrg2.mspid", "Org2MSP");
-            defaultProperty(INTEGRATIONTESTS_ORG + "peerOrg2.domname", "org2.example.com");
-            defaultProperty(INTEGRATIONTESTS_ORG + "peerOrg2.ca_location", "http://" + LOCALHOST + ":8054");
-            defaultProperty(INTEGRATIONTESTS_ORG + "peerOrg2.peer_locations", "peer0.org2.example.com@grpc://" + LOCALHOST + ":8051,peer1.org2.example.com@grpc://" + LOCALHOST + ":8056");
-            defaultProperty(INTEGRATIONTESTS_ORG + "peerOrg2.orderer_locations", "orderer.example.com@grpc://" + LOCALHOST + ":7050");
+            defaultProperty(INTEGRATIONTESTS_ORG + "peerOrg2.domname", "org2.xidata.com.cn");
+            defaultProperty(INTEGRATIONTESTS_ORG + "peerOrg2.caName", "ca1");
+            defaultProperty(INTEGRATIONTESTS_ORG + "peerOrg2.ca_location", "http://192.168.1.46:8054");
+            defaultProperty(INTEGRATIONTESTS_ORG + "peerOrg2.peer_locations", "peer0.org2.xidata.com.cn@grpc://192.168.1.43:7051,peer1.org2.xidata.com.cn@grpc://192.168.1.44:7051");
+            defaultProperty(INTEGRATIONTESTS_ORG + "peerOrg2.orderer_locations", "orderer.xidata.com.cn@grpc://192.168.1.45:7050");
 
             defaultProperty(INTEGRATIONTESTSTLS, null);
             runningTLS = null != sdkProperties.getProperty(INTEGRATIONTESTSTLS, null);
@@ -419,12 +420,13 @@ public class ConfigManager {
         }
 
         if (!isRunningAgainstFabric10()) {
+            String adminLoc = "crypto-config/ordererOrganizations/xidata.com.cn/users/Admin@xidata.com.cn";
             File clientCert;
             File clientKey;
             if ("orderer".equals(type)) {
-                clientCert = Paths.get(getTestChannelPath(), "crypto-config/ordererOrganizations/example.com/users/Admin@example.com/tls/client.crt").toFile();
+                clientCert = Paths.get(getTestChannelPath(), adminLoc + "/tls/client.crt").toFile();
 
-                clientKey = Paths.get(getTestChannelPath(), "crypto-config/ordererOrganizations/example.com/users/Admin@example.com/tls/client.key").toFile();
+                clientKey = Paths.get(getTestChannelPath(), adminLoc + "/tls/client.key").toFile();
             } else {
                 clientCert = Paths.get(getTestChannelPath(), "crypto-config/peerOrganizations/", domainName, "users/User1@" + domainName, "tls/client.crt").toFile();
                 clientKey = Paths.get(getTestChannelPath(), "crypto-config/peerOrganizations/", domainName, "users/User1@" + domainName, "tls/client.key").toFile();

@@ -1,3 +1,4 @@
+import com.routz.fabricdemo.integration.domain.Chaincode;
 import com.routz.fabricdemo.integration.domain.FabricUser;
 import com.routz.fabricdemo.integration.domain.TransInfo;
 import com.routz.fabricdemo.integration.service.FabricChannelService;
@@ -13,10 +14,10 @@ public class FabricTest {
 
     static private final ConfigManager config = FabricFactory.getConfig();
 
-    static final private String CHANNEL_NAME = "foo";
+    static final private String CHANNEL_NAME = "qian";
     static final private String ORG_NAME = "peerOrg1";
     static final private String TEST_USER_NAME = "user1";
-    static final private String TEST_USER_SECRET = "HzpQJymxQFCm";
+    static final private String TEST_USER_SECRET = "KADKbPSnCYTI";
 
     @Test
     public void registerUser() throws Exception {
@@ -36,7 +37,9 @@ public class FabricTest {
     }
     @Test
     public void installChaincode() throws Exception {
-        FabricChannelService.installChaincode(ORG_NAME, CHANNEL_NAME);
+        final Chaincode chaincode = new Chaincode();
+
+        FabricChannelService.installChaincode(ORG_NAME, CHANNEL_NAME, chaincode);
     }
     @Test
     public void invoke() throws Exception {
