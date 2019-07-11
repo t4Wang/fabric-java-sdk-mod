@@ -118,5 +118,6 @@ configtxgen --configPath . -outputCreateChannelTx 通道名.tx -profile TwoOrgsC
 
 ## 示例链码
 在下有个模拟物联网设备打卡签到的简单链码，我为什么这样写呢？可以参考我写的一篇博客[hyperledger fabric java sdk 多线程并发调用时遇到 TransactionEventException的解决办法](https://blog.csdn.net/tom9238/article/details/95448664)
+**调用方法在`com.routz.fabric_java_sdk_integration.service.SkrService`的checkin方法里（很重要，如果想获取返回的区块信息就需要参考一下）**
 
 > 我对 fabric 了解还不够，深感自己学识浅薄，这个sdk还有很大优化余地，有任何问题都可以提出来，我会尽力与你探讨和解决，区块链行业还算起步阶段，各种资料，社区都还不足，希望能与你共同呵护行业的发展~

@@ -31,7 +31,7 @@ public class SkrService extends ServiceImpl<SkrMapper, Skr> {
     public SkrService() throws Exception {
     }
 
-    public void cc(String rfid, String readerId) throws Exception {
+    public void checkin(String rfid, String readerId) throws Exception {
         String uuid = UUID.randomUUID().toString();
         // 判断重复时间，确保key不在同一个块上重复操作
         CompletableFuture<BlockEvent.TransactionEvent> checkin = fu.checkin(new Date().toString(), rfid, readerId);
