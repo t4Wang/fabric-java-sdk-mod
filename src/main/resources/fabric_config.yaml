@@ -1,0 +1,22 @@
+orgs:
+  peerOrg1:
+    name: peerOrg1
+    mspid: Org1MSP
+    domainName: org1.example.com
+    peerLocations:
+      peer0.org1.example.com: grpc://192.168.1.40:7051
+      peer1.org1.example.com: grpc://192.168.1.41:7056
+    ordererLocations:
+      orderer.example.com: grpc://192.168.1.40:7050
+    caName: ca0
+    caLocation: http://192.168.1.43:7054
+  peerOrg2:
+    name: peerOrg2
+    mspid: Org2MSP
+    domainName: org2.example.com
+    peerLocations:
+      peer0.org2.example.com: grpc://192.168.1.40:8051
+    ordererLocations:
+      orderer.example.com: grpc://192.168.1.40:7050
+    caLocation: http://192.168.1.43:8054
+
